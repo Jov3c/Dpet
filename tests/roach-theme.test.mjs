@@ -72,12 +72,23 @@ test("top-down walking animation is a 100 by 150 APNG", () => {
   assert.ok(bytes.includes(Buffer.from("acTL")), "animation must include an APNG control chunk");
 });
 
+test("top-down theme includes smooth probe and turn animations", () => {
+  const theme = JSON.parse(readFileSync("assets/roach-topdown/theme.json", "utf8"));
+  for (const state of ["probe", "turn", "sleep", "groom"]) {
+    const asset = theme.states[state];
+    assert.ok(asset, `${state} animation must be declared`);
+    const bytes = readFileSync(`assets/roach-topdown/${asset}`);
+    assert.equal(bytes.readUInt32BE(16), 100, `${state} width`);
+    assert.equal(bytes.readUInt32BE(20), 150, `${state} height`);
+    assert.ok(bytes.includes(Buffer.from("acTL")), `${state} must be APNG`);
+  }
+});
+
 test("top-down runtime theme maps system and pointer behaviour to raster animations", () => {
   const theme = JSON.parse(readFileSync("assets/roach-topdown/theme.json", "utf8"));
-  assert.deepEqual(Object.keys(theme.states).sort(), ["alert", "flee", "idle", "sprint", "walk"]);
+  assert.deepEqual(Object.keys(theme.states).sort(), ["alert", "flee", "groom", "idle", "probe", "sleep", "sprint", "turn", "walk"]);
   assert.deepEqual(Object.keys(theme.reactions).sort(), ["dragged", "dropped", "grabbed", "struggle"]);
-  assert.ok(theme.eventMap.mouseApproach === "flee");
-  assert.ok(theme.eventMap.cpuBusy === "alert");
+  assert.deepEqual(theme.eventMap, {});
 
   for (const asset of [...Object.values(theme.states), ...Object.values(theme.reactions)]) {
     const bytes = readFileSync(`assets/roach-topdown/${asset}`);

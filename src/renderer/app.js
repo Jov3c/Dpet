@@ -117,6 +117,9 @@ pet.addEventListener("pointerdown", (event) => {
   pet.setPointerCapture(event.pointerId);
   trigger({ type: "pointer-down", x: state.x, y: state.y });
 });
+pet.addEventListener("pointerenter", () => {
+  if (state?.mode === "sleep" || state?.mode === "groom") trigger({ type: "wake" });
+});
 pet.addEventListener("pointermove", (event) => {
   if (!dragging) return;
   trigger({ type: "pointer-drag", x: event.screenX - area.x - PET_WIDTH / 2, y: event.screenY - area.y - PET_HEIGHT / 2 });

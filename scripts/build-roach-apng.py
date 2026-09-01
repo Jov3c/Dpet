@@ -2,6 +2,13 @@ from pathlib import Path
 
 from PIL import Image
 
+try:
+    import cv2
+    import numpy as np
+except ImportError:
+    cv2 = None
+    np = None
+
 
 ROOT = Path(__file__).resolve().parents[1]
 CANVAS = (100, 150)
@@ -10,47 +17,80 @@ ANIMATIONS = {
     "idle": {
         "frame_dir": ROOT / "assets" / "roach-topdown" / "frames" / "idle",
         "out": ROOT / "assets" / "roach-topdown" / "animations" / "idle-100x150.apng",
-        "duration": [460, 460, 460],
+        "frame_duration": 230,
+        "inbetweens": 1,
     },
     "alert": {
         "frame_dir": ROOT / "assets" / "roach-topdown" / "frames" / "idle",
         "out": ROOT / "assets" / "roach-topdown" / "animations" / "alert-100x150.apng",
-        "duration": [180, 180, 180],
+        "frame_duration": 90,
+        "inbetweens": 1,
+    },
+    "probe": {
+        "frame_dir": ROOT / "assets" / "roach-topdown" / "frames" / "idle",
+        "out": ROOT / "assets" / "roach-topdown" / "animations" / "probe-100x150.apng",
+        "frame_duration": 70,
+        "inbetweens": 1,
+    },
+    "sleep": {
+        "frame_dir": ROOT / "assets" / "roach-topdown" / "frames" / "idle",
+        "out": ROOT / "assets" / "roach-topdown" / "animations" / "sleep-100x150.apng",
+        "frame_duration": 520,
+        "inbetweens": 1,
+    },
+    "groom": {
+        "frame_dir": ROOT / "assets" / "roach-topdown" / "frames" / "struggle",
+        "out": ROOT / "assets" / "roach-topdown" / "animations" / "groom-100x150.apng",
+        "frame_duration": 145,
+        "inbetweens": 1,
     },
     "walk": {
         "frame_dir": ROOT / "assets" / "roach-topdown" / "frames" / "walk",
         "out": ROOT / "assets" / "roach-topdown" / "animations" / "walk-100x150.apng",
-        "duration": [145, 145, 145, 145],
+        "frame_duration": 72,
+        "inbetweens": 1,
     },
     "sprint": {
         "frame_dir": ROOT / "assets" / "roach-topdown" / "frames" / "walk",
         "out": ROOT / "assets" / "roach-topdown" / "animations" / "sprint-100x150.apng",
-        "duration": [95, 95, 95, 95],
+        "frame_duration": 47,
+        "inbetweens": 1,
     },
     "flee": {
         "frame_dir": ROOT / "assets" / "roach-topdown" / "frames" / "walk",
         "out": ROOT / "assets" / "roach-topdown" / "animations" / "flee-100x150.apng",
-        "duration": [70, 70, 70, 70],
+        "frame_duration": 35,
+        "inbetweens": 1,
+    },
+    "turn": {
+        "frame_dir": ROOT / "assets" / "roach-topdown" / "frames" / "walk",
+        "out": ROOT / "assets" / "roach-topdown" / "animations" / "turn-100x150.apng",
+        "frame_duration": 58,
+        "inbetweens": 1,
     },
     "struggle": {
         "frame_dir": ROOT / "assets" / "roach-topdown" / "frames" / "struggle",
         "out": ROOT / "assets" / "roach-topdown" / "animations" / "struggle-100x150.apng",
-        "duration": [105, 105, 105, 105],
+        "frame_duration": 52,
+        "inbetweens": 1,
     },
     "grabbed": {
         "frame_dir": ROOT / "assets" / "roach-topdown" / "frames" / "struggle",
         "out": ROOT / "assets" / "roach-topdown" / "animations" / "grabbed-100x150.apng",
-        "duration": [130, 130, 130, 130],
+        "frame_duration": 65,
+        "inbetweens": 1,
     },
     "dragged": {
         "frame_dir": ROOT / "assets" / "roach-topdown" / "frames" / "struggle",
         "out": ROOT / "assets" / "roach-topdown" / "animations" / "dragged-100x150.apng",
-        "duration": [85, 85, 85, 85],
+        "frame_duration": 42,
+        "inbetweens": 1,
     },
     "dropped": {
         "frame_dir": ROOT / "assets" / "roach-topdown" / "frames" / "dropped",
         "out": ROOT / "assets" / "roach-topdown" / "animations" / "dropped-100x150.apng",
-        "duration": [120, 120, 100, 100],
+        "frame_duration": 110,
+        "inbetweens": 0,
     },
 }
 
@@ -81,28 +121,55 @@ def compose(frame: Image.Image, crop: tuple[int, int, int, int]) -> Image.Image:
     return canvas
 
 
+def interpolate(source: Image.Image, target: Image.Image, progress: float) -> Image.Image:
+    if cv2 is None or np is None:
+        return Image.blend(source, target, progress)
+    first = np.array(source)
+    second = np.array(target)
+    first_gray = cv2.cvtColor(first[:, :, :3], cv2.COLOR_RGB2GRAY)
+    second_gray = cv2.cvtColor(second[:, :, :3], cv2.COLOR_RGB2GRAY)
+    forward = cv2.calcOpticalFlowFarneback(first_gray, second_gray, None, 0.5, 2, 15, 3, 5, 1.1, 0)
+    backward = cv2.calcOpticalFlowFarneback(second_gray, first_gray, None, 0.5, 2, 15, 3, 5, 1.1, 0)
+    height, width = first_gray.shape
+    grid_x, grid_y = np.meshgrid(np.arange(width, dtype=np.float32), np.arange(height, dtype=np.float32))
+    warped_first = cv2.remap(first, grid_x - forward[:, :, 0] * progress, grid_y - forward[:, :, 1] * progress, cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT, borderValue=(0, 0, 0, 0))
+    warped_second = cv2.remap(second, grid_x - backward[:, :, 0] * (1 - progress), grid_y - backward[:, :, 1] * (1 - progress), cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT, borderValue=(0, 0, 0, 0))
+    return Image.fromarray(cv2.addWeighted(warped_first, 1 - progress, warped_second, progress, 0), "RGBA")
+
+
+def smooth_frames(frames: list[Image.Image], inbetweens: int) -> list[Image.Image]:
+    if inbetweens == 0:
+        return frames
+    result = []
+    for index, source in enumerate(frames):
+        target = frames[(index + 1) % len(frames)]
+        result.append(source)
+        for step in range(1, inbetweens + 1):
+            result.append(interpolate(source, target, step / (inbetweens + 1)))
+    return result
+
+
 def build_animation(name: str, config: dict[str, object]) -> None:
     frame_dir = config["frame_dir"]
     out = config["out"]
-    durations = config["duration"]
-    if not isinstance(frame_dir, Path) or not isinstance(out, Path) or not isinstance(durations, list):
+    frame_duration = config["frame_duration"]
+    inbetweens = config["inbetweens"]
+    if not isinstance(frame_dir, Path) or not isinstance(out, Path) or not isinstance(frame_duration, int) or not isinstance(inbetweens, int):
         raise TypeError(f"Invalid configuration for {name}")
 
     paths = sorted(frame_dir.glob("frame-*.png"))
     if len(paths) < 2:
         raise SystemExit(f"At least two {name} PNG frames are required")
-    if len(paths) != len(durations):
-        raise SystemExit(f"{name} needs one duration per frame")
     source = [Image.open(path).convert("RGBA") for path in paths]
     crop = union_box([alpha_bbox(frame) for frame in source])
-    frames = [compose(frame, crop) for frame in source]
+    frames = smooth_frames([compose(frame, crop) for frame in source], inbetweens)
     out.parent.mkdir(parents=True, exist_ok=True)
     frames[0].save(
         out,
         format="PNG",
         save_all=True,
         append_images=frames[1:],
-        duration=durations,
+        duration=[frame_duration] * len(frames),
         loop=0,
         disposal=2,
         blend=0,

@@ -30,6 +30,16 @@ test("roaming direction ignores the cursor", () => {
   assert.ok(next.velocity.x < 0, "cursor on the right must not pull the pet toward it");
 });
 
+test("a resting pet stays still until the pointer wakes it", () => {
+  let state = { ...createPetState({ x: 500, y: 400, heading: 0 }), nextRestAt: 0 };
+  state = advancePet(state, { viewport, deltaMs: 16, random: () => 0 });
+  assert.equal(state.mode, "sleep");
+
+  state = applyPetEvent(state, { type: "wake" });
+  assert.equal(state.mode, "walk");
+  assert.ok(state.velocity.x > 0);
+});
+
 test("grab, drag and release use the physical interaction sequence", () => {
   let state = createPetState({ x: 300, y: 300, heading: 0 });
   state = applyPetEvent(state, { type: "pointer-down", x: 300, y: 300 });
@@ -44,7 +54,7 @@ test("grab, drag and release use the physical interaction sequence", () => {
   assert.ok(state.transientUntil > 0);
 });
 
-test("reaching a screen edge turns the pet back into the work area", () => {
+test("reaching a screen edge plays a turn before returning to the work area", () => {
   const state = createPetState({ x: 1, y: 400, heading: Math.PI });
   const next = advancePet(state, {
     viewport,
@@ -53,7 +63,7 @@ test("reaching a screen edge turns the pet back into the work area", () => {
     random: () => 0.5,
   });
 
-  assert.equal(next.mode, "walk");
+  assert.equal(next.mode, "turn");
   assert.equal("hidden" in next, false);
   assert.ok(next.x >= 8, "pet must remain inside the left edge margin");
   assert.ok(next.velocity.x > 0, "pet must turn away from the left edge");
