@@ -110,57 +110,9 @@ def build_animation(name: str, config: dict[str, object]) -> None:
     print(f"Wrote {out.relative_to(ROOT)} ({len(frames)} frames, {CANVAS[0]}x{CANVAS[1]})")
 
 
-# The "peek" sprite shows just the two antennae poking from a screen edge after
-# the pet is dragged to the edge. Cropped from the idle frames' antennae region
-# (tips at y 40, roots at y 285 where they meet the head). The crop is resized
-# to a fixed width and pasted at the canvas top-left, so the antennae roots sit
-# flush against the bottom edge of the sprite, which sits flush against the
-# screen edge when tucked.
-PEEK_CROP = (214, 40, 1145, 285)
-PEEK_WIDTH = 115
-# Electron/Windows will not shrink a window below this height (38 DIP), so the
-# peek canvas is padded to it while the antennae stay at their natural scale
-# and are pasted against the bottom edge, keeping the roots flush at the edge.
-PEEK_MIN_HEIGHT = 38
-PEEK_DURATION = [420, 420]
-
-
-def build_peek() -> None:
-    frame_dir = ROOT / "assets" / "roach-topdown" / "frames" / "idle"
-    paths = sorted(frame_dir.glob("frame-*.png"))[:2]
-    if len(paths) != len(PEEK_DURATION):
-        raise SystemExit("peek needs one duration per frame")
-    crop_w = PEEK_CROP[2] - PEEK_CROP[0]
-    crop_h = PEEK_CROP[3] - PEEK_CROP[1]
-    img_h = max(1, round(crop_h * PEEK_WIDTH / crop_w))
-    height = max(PEEK_MIN_HEIGHT, img_h)
-    canvas_size = (PEEK_WIDTH, height)
-    out = ROOT / "assets" / "roach-topdown" / "animations" / f"peek-{PEEK_WIDTH}x{height}.apng"
-    frames = []
-    for path in paths:
-        source = Image.open(path).convert("RGBA")
-        subject = source.crop(PEEK_CROP).resize((PEEK_WIDTH, img_h), Image.Resampling.LANCZOS)
-        canvas = Image.new("RGBA", canvas_size, (0, 0, 0, 0))
-        canvas.alpha_composite(subject, (0, height - img_h))
-        frames.append(canvas)
-    out.parent.mkdir(parents=True, exist_ok=True)
-    frames[0].save(
-        out,
-        format="PNG",
-        save_all=True,
-        append_images=frames[1:],
-        duration=PEEK_DURATION,
-        loop=0,
-        disposal=2,
-        blend=0,
-    )
-    print(f"Wrote {out.relative_to(ROOT)} (peek {canvas_size[0]}x{canvas_size[1]})")
-
-
 def main() -> None:
     for name, config in ANIMATIONS.items():
         build_animation(name, config)
-    build_peek()
 
 
 if __name__ == "__main__":

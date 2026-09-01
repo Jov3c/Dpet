@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>确认回收</title>
+    <link rel="stylesheet" href="confirm.css" />
+  </head>
+  <body>
+    <main class="confirm-window">
+      <header><span>ROACH / RECYCLE</span><button id="close" type="button" aria-label="关闭">✕</button></header>
+      <section class="content">
+        <h1>让蟑螂吃掉这些？</h1>
+        <p id="confirm-count" class="count"></p>
+        <ul id="confirm-list"></ul>
+        <div class="actions"><button id="cancel" type="button">取消</button><button id="confirm" type="button">吃掉</button></div>
+      </section>
+    </main>
+    <script type="module" src="confirm.js"></script>
+  </body>
+</html>

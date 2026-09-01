@@ -8,7 +8,8 @@ const { buildTrayMenu } = require("../src/main-menu.js");
 
 const theme = {
   states: { idle: "animations/idle.apng", walk: "animations/walk.apng" },
-  reactions: { dragged: "animations/dragged.apng" }
+  reactions: { dragged: "animations/dragged.apng" },
+  peek: "animations/peek.apng"
 };
 
 test("unchanged visual does not reload an APNG animation", () => {
@@ -17,6 +18,13 @@ test("unchanged visual does not reload an APNG animation", () => {
   assert.equal(applyPetVisual(pet, theme, { mode: "walk", heading: 0.2 }), false);
   assert.equal(applyPetVisual(pet, theme, { mode: "dragged", heading: 0.2 }), true);
   assert.match(pet.src, /dragged\.apng$/);
+});
+
+test("tucked visual switches to the antenna-only edge animation", () => {
+  const pet = { dataset: {}, style: {}, src: "" };
+  applyPetVisual(pet, theme, { mode: "tucked", tuckedEdge: "right", heading: 0 });
+  assert.match(pet.src, /peek\.apng$/);
+  assert.match(pet.style.transform, /rotate\(-90deg\)/);
 });
 
 test("tray menu exposes settings and a clean exit command", () => {

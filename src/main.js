@@ -1,28 +1,24 @@
-const { app, BrowserWindow, ipcMain, powerMonitor, globalShortcut, screen, Menu, Tray, nativeImage } = require("electron");
+const { app, BrowserWindow, ipcMain, screen, Menu, Tray, nativeImage } = require("electron");
 const fs = require("node:fs");
 const path = require("node:path");
-const os = require("node:os");
 const { buildTrayMenu } = require("./main-menu");
 const recycleBin = require("./recycle-bin");
 
 let petWindow;
 let settingsWindow;
+let confirmWindow;
 let tray;
-let cpuTimer;
-let lastCpuSample;
 let isQuitting = false;
-const PET_SIZE = { width: 95, height: 161 };
-let petSize = PET_SIZE;
+const PET_SIZE = { width: 100, height: 150 };
 const SETTINGS_SIZE = { width: 380, height: 460 };
-const DIALOG_SIZE = { width: 360, height: 230 };
+const CONFIRM_SIZE = { width: 360, height: 230 };
+let recycleConfirmationPaths = [];
 const DEFAULT_SETTINGS = {
   autoWalk: true,
   draggable: true,
-  avoidMouse: true,
   tease: true,
   edgeTuck: true,
-  systemEvents: true,
-  alwaysOnTop: true,
+  alwaysOnTop: true
 };
 
 function settingsPath() {
@@ -31,10 +27,18 @@ function settingsPath() {
 
 function readSettings() {
   try {
-    return { ...DEFAULT_SETTINGS, ...JSON.parse(fs.readFileSync(settingsPath(), "utf8")) };
+    return normalizeSettings(JSON.parse(fs.readFileSync(settingsPath(), "utf8")));
   } catch {
     return { ...DEFAULT_SETTINGS };
   }
+}
+
+function normalizeSettings(candidate = {}) {
+  const input = candidate && typeof candidate === "object" ? candidate : {};
+  return Object.fromEntries(Object.entries(DEFAULT_SETTINGS).map(([key, fallback]) => [
+    key,
+    typeof input[key] === "boolean" ? input[key] : fallback
+  ]));
 }
 
 function saveSettings(settings) {
@@ -46,68 +50,93 @@ function currentWorkArea() {
   return screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).workArea;
 }
 
-function sendSystemEvent(type) {
-  petWindow?.webContents.send("system-event", type);
-}
-
-function setPetWindowSize(size) {
+function setPetWindowSize(size = PET_SIZE) {
   if (!petWindow) return;
-  petSize = size;
-  // No min/max lock: setBounds re-asserts the size on every move, which keeps
-  // the window fixed on scaled-DPI displays and lets the peek window be small.
-  petWindow.setSize(petSize.width, petSize.height, false);
+  const { x, y } = petWindow.getBounds();
+  petWindow.setBounds({ x, y, width: size.width, height: size.height }, false);
   petWindow.setResizable(false);
 }
 
-// Center a window on the display under the cursor.
-function centerWindow(win) {
-  if (!win) return;
+function centerWindow(window) {
+  if (!window || window.isDestroyed()) return;
   const area = currentWorkArea();
-  const bounds = win.getBounds();
-  win.setBounds({
+  const bounds = window.getBounds();
+  window.setBounds({
     x: Math.round(area.x + (area.width - bounds.width) / 2),
     y: Math.round(area.y + (area.height - bounds.height) / 2),
     width: bounds.width,
-    height: bounds.height,
+    height: bounds.height
   });
 }
 
 function applyDisplayMode(settings) {
-  if (!petWindow) return;
-  petWindow.setAlwaysOnTop(Boolean(settings.alwaysOnTop), settings.alwaysOnTop ? "screen-saver" : undefined);
+  petWindow?.setAlwaysOnTop(Boolean(settings.alwaysOnTop), settings.alwaysOnTop ? "screen-saver" : undefined);
 }
 
-// The settings live in their own window so the pet never moves or resizes when
-// settings are opened or closed.
 function openSettings() {
-  if (!settingsWindow || settingsWindow.isDestroyed()) {
-    settingsWindow = new BrowserWindow({
-      width: SETTINGS_SIZE.width,
-      height: SETTINGS_SIZE.height,
-      frame: false,
-      transparent: true,
-      hasShadow: false,
-      resizable: false,
-      useContentSize: true,
-      skipTaskbar: true,
-      show: false,
-      webPreferences: {
-        preload: path.join(__dirname, "preload.js"),
-        contextIsolation: true,
-        nodeIntegration: false,
-      },
-    });
-    settingsWindow.loadFile(path.join(__dirname, "renderer", "settings.html"));
-    settingsWindow.once("ready-to-show", () => {
-      centerWindow(settingsWindow);
-      settingsWindow.showInactive();
-      settingsWindow.focus();
-    });
+  if (settingsWindow && !settingsWindow.isDestroyed()) {
+    centerWindow(settingsWindow);
+    settingsWindow.showInactive();
+    settingsWindow.focus();
     return;
   }
-  centerWindow(settingsWindow);
-  settingsWindow.showInactive();
-  settingsWindow.focus();
+  settingsWindow = new BrowserWindow({
+    width: SETTINGS_SIZE.width,
+    height: SETTINGS_SIZE.height,
+    frame: false,
+    transparent: true,
+    hasShadow: false,
+    resizable: false,
+    useContentSize: true,
+    skipTaskbar: true,
+    show: false,
+    webPreferences: {
+      preload: path.join(__dirname, "preload.js"),
+      contextIsolation: true,
+      nodeIntegration: false
+    }
+  });
+  settingsWindow.loadFile(path.join(__dirname, "renderer", "settings.html"));
+  settingsWindow.once("ready-to-show", () => {
+    centerWindow(settingsWindow);
+    settingsWindow?.showInactive();
+  });
+}
+
+function createRecycleConfirmation(paths) {
+  if (confirmWindow && !confirmWindow.isDestroyed()) {
+    confirmWindow.focus();
+    return false;
+  }
+  recycleConfirmationPaths = paths;
+  confirmWindow = new BrowserWindow({
+    width: CONFIRM_SIZE.width,
+    height: CONFIRM_SIZE.height,
+    frame: false,
+    transparent: true,
+    hasShadow: false,
+    resizable: false,
+    useContentSize: true,
+    skipTaskbar: true,
+    alwaysOnTop: true,
+    show: false,
+    webPreferences: {
+      preload: path.join(__dirname, "preload.js"),
+      contextIsolation: true,
+      nodeIntegration: false
+    }
+  });
+  confirmWindow.setAlwaysOnTop(true, "screen-saver");
+  confirmWindow.loadFile(path.join(__dirname, "renderer", "confirm.html"));
+  confirmWindow.once("ready-to-show", () => {
+    centerWindow(confirmWindow);
+    confirmWindow?.show();
+  });
+  confirmWindow.on("closed", () => {
+    confirmWindow = undefined;
+    recycleConfirmationPaths = [];
+  });
+  return true;
 }
 
 function createTray() {
@@ -142,46 +171,18 @@ function createWindow() {
     }
   });
   petWindow.setAlwaysOnTop(true, "screen-saver");
-  setPetWindowSize(PET_SIZE);
+  setPetWindowSize();
   petWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
-  // "Show Desktop" (Win+D) minimizes normal windows; the pet should stay on the
-  // desktop, so restore it immediately whenever Windows minimizes it.
   petWindow.on("minimize", () => petWindow?.restore());
   petWindow.loadFile(path.join(__dirname, "renderer", "index.html"));
   petWindow.once("ready-to-show", () => petWindow?.showInactive());
-}
-
-function cpuSnapshot() {
-  return os.cpus().reduce((total, cpu) => {
-    total.idle += cpu.times.idle;
-    total.total += Object.values(cpu.times).reduce((sum, value) => sum + value, 0);
-    return total;
-  }, { idle: 0, total: 0 });
-}
-
-function monitorCpu() {
-  lastCpuSample = cpuSnapshot();
-  cpuTimer = setInterval(() => {
-    const next = cpuSnapshot();
-    const totalDelta = next.total - lastCpuSample.total;
-    const idleDelta = next.idle - lastCpuSample.idle;
-    lastCpuSample = next;
-    if (totalDelta > 0 && 1 - idleDelta / totalDelta >= 0.85) sendSystemEvent("cpu-busy");
-  }, 1800);
 }
 
 app.whenReady().then(() => {
   recycleBin.init();
   createWindow();
   createTray();
-  monitorCpu();
   applyDisplayMode(readSettings());
-
-  for (const eventName of ["suspend", "resume", "lock-screen", "unlock-screen", "on-ac", "on-battery"]) {
-    powerMonitor.on(eventName, () => sendSystemEvent(eventName));
-  }
-  globalShortcut.register("Control+Shift+R", () => petWindow?.showInactive());
-  globalShortcut.register("Control+Shift+H", () => petWindow?.hide());
 });
 
 ipcMain.handle("pet:get-theme", () => {
@@ -190,38 +191,38 @@ ipcMain.handle("pet:get-theme", () => {
 });
 ipcMain.handle("pet:get-settings", () => readSettings());
 ipcMain.handle("pet:set-settings", (_event, partial) => {
-  const next = { ...readSettings(), ...partial };
+  const next = normalizeSettings({ ...readSettings(), ...partial });
   saveSettings(next);
   if (typeof partial.alwaysOnTop === "boolean") applyDisplayMode(next);
   return next;
 });
 ipcMain.handle("pet:get-work-area", () => currentWorkArea());
-ipcMain.handle("pet:get-cursor", () => screen.getCursorScreenPoint());
 ipcMain.on("pet:move", (_event, position) => {
-  if (!petWindow) return;
-  const x = Math.round(Number(position.x));
-  const y = Math.round(Number(position.y));
-  if (!Number.isFinite(x) || !Number.isFinite(y)) return;
-  const width = Number.isFinite(position.width) ? Math.round(position.width) : petSize.width;
-  const height = Number.isFinite(position.height) ? Math.round(position.height) : petSize.height;
+  if (!petWindow || !position || !Number.isFinite(position.x) || !Number.isFinite(position.y)) return;
   const area = currentWorkArea();
-  // setBounds re-asserts the size with every move, so the window cannot drift
-  // larger on scaled-DPI displays (setPosition alone grows ~1px per move).
-  petWindow.setBounds({ x: area.x + x, y: area.y + y, width, height });
+  const requestedSize = { width: Math.round(position.width), height: Math.round(position.height) };
+  const isPeekSize = (requestedSize.width === 115 && requestedSize.height === 38)
+    || (requestedSize.width === 38 && requestedSize.height === 115);
+  const width = isPeekSize ? requestedSize.width : PET_SIZE.width;
+  const height = isPeekSize ? requestedSize.height : PET_SIZE.height;
+  petWindow.setBounds({ x: Math.round(area.x + position.x), y: Math.round(area.y + position.y), width, height }, false);
 });
 ipcMain.on("pet:hide", () => petWindow?.hide());
 ipcMain.on("pet:show", () => petWindow?.showInactive());
 ipcMain.on("pet:close-settings", () => settingsWindow?.close());
-ipcMain.on("pet:set-dialog-open", (_event, open) => {
-  setPetWindowSize(open ? DIALOG_SIZE : PET_SIZE);
-  if (open) centerWindow(petWindow);
+ipcMain.handle("pet:open-recycle-confirmation", (_event, paths) => {
+  if (!Array.isArray(paths) || !paths.every((entry) => typeof entry === "string")) return false;
+  return createRecycleConfirmation(paths);
 });
-
-// Recycle bin: the roach "eats" dropped files by moving them into its own bin.
-ipcMain.handle("pet:recycle-files", (_event, paths) => {
-  if (!Array.isArray(paths)) return [];
-  return recycleBin.recycleFiles(paths);
+ipcMain.handle("pet:get-recycle-confirmation", () => recycleConfirmationPaths.map((filePath) => ({
+  name: path.basename(filePath),
+  path: filePath
+})));
+ipcMain.handle("pet:confirm-recycle", () => {
+  const results = recycleBin.recycleFiles(recycleConfirmationPaths);
+  return results;
 });
+ipcMain.on("pet:close-recycle-confirmation", () => confirmWindow?.close());
 ipcMain.handle("pet:list-recycle-bin", () => recycleBin.listItems());
 ipcMain.handle("pet:restore-file", (_event, id) => recycleBin.restoreFile(id));
 ipcMain.handle("pet:empty-recycle-bin", () => recycleBin.emptyBin());
@@ -231,8 +232,7 @@ app.on("window-all-closed", (event) => {
 });
 app.on("before-quit", () => {
   isQuitting = true;
-  clearInterval(cpuTimer);
   tray?.destroy();
   settingsWindow?.destroy();
+  confirmWindow?.destroy();
 });
-app.on("will-quit", () => globalShortcut.unregisterAll());
