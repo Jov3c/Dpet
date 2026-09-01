@@ -1,6 +1,6 @@
 {
   "name": "roach-on-desk",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Offline, photorealistic cockroach desktop pet for Windows 11",
   "main": "src/main.js",
   "author": "Dpet",
