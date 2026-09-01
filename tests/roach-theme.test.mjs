@@ -72,9 +72,9 @@ test("top-down walking animation is a 100 by 150 APNG", () => {
   assert.ok(bytes.includes(Buffer.from("acTL")), "animation must include an APNG control chunk");
 });
 
-test("top-down theme includes smooth probe and turn animations", () => {
+test("top-down theme keeps a single calm idle animation for every rest period", () => {
   const theme = JSON.parse(readFileSync("assets/roach-topdown/theme.json", "utf8"));
-  for (const state of ["probe", "turn", "sleep", "groom"]) {
+  for (const state of ["idle", "turn"]) {
     const asset = theme.states[state];
     assert.ok(asset, `${state} animation must be declared`);
     const bytes = readFileSync(`assets/roach-topdown/${asset}`);
@@ -86,8 +86,8 @@ test("top-down theme includes smooth probe and turn animations", () => {
 
 test("top-down runtime theme maps system and pointer behaviour to raster animations", () => {
   const theme = JSON.parse(readFileSync("assets/roach-topdown/theme.json", "utf8"));
-  assert.deepEqual(Object.keys(theme.states).sort(), ["alert", "flee", "groom", "idle", "probe", "sleep", "sprint", "turn", "walk"]);
-  assert.deepEqual(Object.keys(theme.reactions).sort(), ["dragged", "dropped", "grabbed", "struggle"]);
+  assert.deepEqual(Object.keys(theme.states).sort(), ["alert", "flee", "idle", "sprint", "turn", "walk"]);
+  assert.deepEqual(Object.keys(theme.reactions).sort(), ["dragged", "dropped", "eat", "emerge", "grabbed", "struggle"]);
   assert.deepEqual(theme.eventMap, {});
 
   for (const asset of [...Object.values(theme.states), ...Object.values(theme.reactions)]) {
@@ -96,4 +96,22 @@ test("top-down runtime theme maps system and pointer behaviour to raster animati
     assert.equal(bytes.readUInt32BE(20), 150, `${asset} height`);
     assert.ok(bytes.includes(Buffer.from("acTL")), `${asset} must be APNG`);
   }
+});
+
+test("feeding has its own restrained animation instead of reusing the struggle asset", () => {
+  const eat = readFileSync("assets/roach-topdown/animations/eat-100x150.apng");
+  const struggle = readFileSync("assets/roach-topdown/animations/struggle-100x150.apng");
+  assert.notDeepEqual(eat, struggle);
+});
+
+test("every feeding frame preserves the roach abdomen", () => {
+  const program = [
+    "from PIL import Image",
+    "im = Image.open('assets/roach-topdown/animations/eat-100x150.apng')",
+    "for i in range(im.n_frames):",
+    "  im.seek(i)",
+    "  rgba = im.convert('RGBA')",
+    "  assert any(rgba.getpixel((x, y))[3] > 0 for x in range(42, 59) for y in range(96, 121)), f'frame {i} has no abdomen'",
+  ].join("\n");
+  assert.doesNotThrow(() => execFileSync("python", ["-c", program], { encoding: "utf8" }));
 });

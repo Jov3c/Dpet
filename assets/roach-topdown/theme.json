@@ -5,9 +5,6 @@
   "states": {
     "idle": "animations/idle-100x150.apng",
     "alert": "animations/alert-100x150.apng",
-    "sleep": "animations/sleep-100x150.apng",
-    "groom": "animations/groom-100x150.apng",
-    "probe": "animations/probe-100x150.apng",
     "walk": "animations/walk-100x150.apng",
     "sprint": "animations/sprint-100x150.apng",
     "flee": "animations/flee-100x150.apng",
@@ -17,7 +14,9 @@
     "grabbed": "animations/grabbed-100x150.apng",
     "dragged": "animations/dragged-100x150.apng",
     "dropped": "animations/dropped-100x150.apng",
-    "struggle": "animations/struggle-100x150.apng"
+    "struggle": "animations/struggle-100x150.apng",
+    "emerge": "animations/emerge-100x150.apng",
+    "eat": "animations/eat-100x150.apng"
   },
   "peek": "animations/peek-115x38.apng",
   "eventMap": {},
@@ -29,7 +28,8 @@
   },
   "runtimeNotes": {
     "movement": "The desktop runtime translates and rotates the 100x150 sprite; the APNG sequences interpolate leg and antenna motion for a smoother gait.",
-    "probe": "The roach periodically pauses to sweep its antennae before walking again.",
+    "idle": "When it stops, it only uses the calm idle animation until the pointer enters its body.",
+    "eat": "A restrained head-and-antenna dip plays after a confirmed feed; it does not reuse the struggle motion.",
     "turn": "The roach briefly plants its legs and turns when it reaches the edge of the work area."
   }
 }

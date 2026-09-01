@@ -20,7 +20,7 @@ test("desktop runtime is configured as an offline Electron application", () => {
   assert.ok(existsSync("scripts/make-portable.mjs"));
 });
 
-test("runtime exposes Claude interaction layer without changing the pet's fixed size", () => {
+test("runtime exposes local pet controls without changing the pet's fixed size", () => {
   const main = readFileSync("src/main.js", "utf8");
   const preload = readFileSync("src/preload.js", "utf8");
   const app = readFileSync("src/renderer/app.js", "utf8");
@@ -28,10 +28,20 @@ test("runtime exposes Claude interaction layer without changing the pet's fixed 
   assert.match(main, /const PET_SIZE = \{ width: 100, height: 150 \}/);
   assert.match(main, /pet:open-recycle-confirmation/);
   assert.match(preload, /openRecycleConfirmation/);
+  assert.match(preload, /getRecycleStats/);
+  assert.match(preload, /onSettingsChanged/);
   assert.match(app, /openRecycleConfirmation/);
+  assert.match(app, /activityLevel/);
   assert.doesNotMatch(main, /showFavor/);
   assert.doesNotMatch(app, /favorability/);
   assert.doesNotMatch(main, /globalShortcut/);
   assert.match(main, /createRecycleConfirmation/);
   assert.match(readFileSync("src\/renderer\/settings.css", "utf8"), /-webkit-app-region: drag/);
+});
+
+test("normal-level pet stays in front of the desktop and the settings panel stays visible", () => {
+  const main = readFileSync("src/main.js", "utf8");
+
+  assert.match(main, /petWindow\.moveTop\(\)/);
+  assert.match(main, /settingsWindow\.setAlwaysOnTop\(true, "floating"\)/);
 });

@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from PIL import Image
+from PIL import Image, ImageDraw
 
 try:
     import cv2
@@ -66,6 +66,18 @@ ANIMATIONS = {
         "frame_dir": ROOT / "assets" / "roach-topdown" / "frames" / "walk",
         "out": ROOT / "assets" / "roach-topdown" / "animations" / "turn-100x150.apng",
         "frame_duration": 58,
+        "inbetweens": 1,
+    },
+    "emerge": {
+        "frame_dir": ROOT / "assets" / "roach-topdown" / "frames" / "idle",
+        "out": ROOT / "assets" / "roach-topdown" / "animations" / "emerge-100x150.apng",
+        "frame_duration": 82,
+        "inbetweens": 1,
+    },
+    "eat": {
+        "frame_dir": ROOT / "assets" / "roach-topdown" / "frames" / "idle",
+        "out": ROOT / "assets" / "roach-topdown" / "animations" / "eat-100x150.apng",
+        "frame_duration": 175,
         "inbetweens": 1,
     },
     "struggle": {
@@ -149,6 +161,38 @@ def smooth_frames(frames: list[Image.Image], inbetweens: int) -> list[Image.Imag
     return result
 
 
+def feeding_frames(frame: Image.Image) -> list[Image.Image]:
+    """A visible but restrained feeding sequence: crumb, head dip, then no crumb."""
+    result = []
+    for dip, crumb_width in zip((0, 2, 4, 3, 4, 2, 0, 0), (13, 11, 9, 7, 5, 3, 0, 0)):
+        output = Image.new("RGBA", CANVAS, (0, 0, 0, 0))
+        # Keep the abdomen and legs planted while only the head/antennae lean in.
+        output.alpha_composite(frame.crop((0, 51, CANVAS[0], CANVAS[1])), (0, 51))
+        if crumb_width:
+            left = (CANVAS[0] - crumb_width) // 2
+            top = 36
+            crumb = ImageDraw.Draw(output)
+            crumb.ellipse((left, top, left + crumb_width, top + 6), fill=(119, 77, 34, 255))
+            if crumb_width > 4:
+                crumb.ellipse((left + 2, top + 1, left + crumb_width - 2, top + 3), fill=(182, 126, 61, 255))
+        output.alpha_composite(frame.crop((0, 0, CANVAS[0], 66)), (0, dip))
+        result.append(output)
+    return result
+
+
+def force_full_apng_frames(frames: list[Image.Image]) -> list[Image.Image]:
+    """Prevent APNG delta-frame optimization from clearing the unchanged abdomen."""
+    result = []
+    for index, frame in enumerate(frames):
+        output = frame.copy()
+        alpha = 1 + index % 2
+        # Alternating, visually imperceptible corner pixels keep each encoded frame full-canvas.
+        output.putpixel((0, 0), (0, 0, 0, alpha))
+        output.putpixel((CANVAS[0] - 1, CANVAS[1] - 1), (0, 0, 0, alpha))
+        result.append(output)
+    return result
+
+
 def build_animation(name: str, config: dict[str, object]) -> None:
     frame_dir = config["frame_dir"]
     out = config["out"]
@@ -162,7 +206,8 @@ def build_animation(name: str, config: dict[str, object]) -> None:
         raise SystemExit(f"At least two {name} PNG frames are required")
     source = [Image.open(path).convert("RGBA") for path in paths]
     crop = union_box([alpha_bbox(frame) for frame in source])
-    frames = smooth_frames([compose(frame, crop) for frame in source], inbetweens)
+    composed = [compose(frame, crop) for frame in source]
+    frames = force_full_apng_frames(feeding_frames(composed[0])) if name == "eat" else smooth_frames(composed, inbetweens)
     out.parent.mkdir(parents=True, exist_ok=True)
     frames[0].save(
         out,
@@ -171,7 +216,7 @@ def build_animation(name: str, config: dict[str, object]) -> None:
         append_images=frames[1:],
         duration=[frame_duration] * len(frames),
         loop=0,
-        disposal=2,
+        disposal=0 if name == "eat" else 2,
         blend=0,
     )
     print(f"Wrote {out.relative_to(ROOT)} ({len(frames)} frames, {CANVAS[0]}x{CANVAS[1]})")

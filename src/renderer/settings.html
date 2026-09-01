@@ -7,42 +7,57 @@
     <link rel="stylesheet" href="settings.css" />
   </head>
   <body>
-    <div class="settings-window">
+    <main class="settings-window">
+      <header class="window-bar">
+        <div class="brand"><i></i><span>ROACH / OBSERVATORY</span></div>
+        <button id="close-settings" class="icon-button" type="button" aria-label="关闭">×</button>
+      </header>
       <div class="settings-layout">
-        <nav class="settings-sidebar">
-          <div class="sidebar-brand">ROACH</div>
-          <button class="sidebar-item is-active" type="button" data-pane="behavior">行为</button>
-          <button class="sidebar-item" type="button" data-pane="system">系统</button>
-          <button class="sidebar-item" type="button" data-pane="recycle">回收站</button>
-          <button class="sidebar-item" type="button" data-pane="about">关于</button>
-          <div class="sidebar-footer">v0.1.1</div>
+        <nav class="settings-sidebar" aria-label="设置分类">
+          <button class="sidebar-item is-active" type="button" data-pane="behavior"><b>01</b>行为</button>
+          <button class="sidebar-item" type="button" data-pane="habitat"><b>02</b>栖息</button>
+          <button class="sidebar-item" type="button" data-pane="recycle"><b>03</b>回收</button>
+          <button class="sidebar-item" type="button" data-pane="records"><b>04</b>记录</button>
+          <button class="sidebar-item" type="button" data-pane="about"><b>05</b>说明</button>
+          <span class="sidebar-footer">LOCAL · 0.2</span>
         </nav>
         <div class="settings-main">
-          <header class="settings-bar"><span id="settings-title">行为</span><button id="close-settings" type="button">✕</button></header>
+          <div class="pane-heading"><span id="settings-kicker">BEHAVIOUR</span><h1 id="settings-title">行为</h1></div>
           <div class="settings-content">
             <section class="pane is-active" data-pane="behavior">
-              <label class="toggle-row"><span>自动游走</span><input id="auto-walk" type="checkbox" /></label>
-              <label class="toggle-row"><span>可拖拽抓住</span><input id="draggable" type="checkbox" /></label>
-              <label class="toggle-row"><span>连点挣扎</span><input id="tease" type="checkbox" /></label>
-              <label class="toggle-row"><span>拖到边缘收边</span><input id="edge-tuck" type="checkbox" /></label>
+              <div class="card emphasis">
+                <div><p class="eyebrow">活动节奏</p><p class="subtle">更贴近真实昆虫：短暂爬行后停下，保持安静待机。</p></div>
+                <label class="select-wrap"><select id="activity-level" aria-label="活动节奏"><option value="lazy">慵懒</option><option value="normal">正常</option><option value="active">活跃</option></select></label>
+              </div>
+              <label class="toggle-row"><span><strong>自动游走</strong><small>休息后随机短距离爬行</small></span><input id="auto-walk" type="checkbox" /></label>
+              <label class="toggle-row"><span><strong>安静模式</strong><small>保持停留，鼠标触碰身体才苏醒</small></span><input id="quiet-mode" type="checkbox" /></label>
+              <label class="toggle-row"><span><strong>可拖拽抓住</strong><small>按住可移动，松开会调整姿势</small></span><input id="draggable" type="checkbox" /></label>
+              <label class="toggle-row"><span><strong>连点挣扎</strong><small>短时间内轻触会作出防御反应</small></span><input id="tease" type="checkbox" /></label>
             </section>
-            <section class="pane" data-pane="system">
-              <label class="toggle-row"><span>始终置顶显示</span><input id="always-on-top" type="checkbox" /></label>
-              <div class="info-row"><span>角色尺寸</span><span class="info-value">100 × 150 px（锁定）</span></div>
+            <section class="pane" data-pane="habitat">
+              <label class="toggle-row"><span><strong>拖到边缘收边</strong><small>只露出两根触须，点击后重新爬出</small></span><input id="edge-tuck" type="checkbox" /></label>
+              <div class="card compact"><div><strong>偏好的藏身边缘</strong><small>手动收边时优先选择</small></div><label class="select-wrap"><select id="edge-preference"><option value="any">就近边缘</option><option value="left">左侧</option><option value="right">右侧</option><option value="top">顶部</option><option value="bottom">底部</option></select></label></div>
+              <label class="toggle-row"><span><strong>记住位置</strong><small>下次启动回到最后停留处</small></span><input id="remember-position" type="checkbox" /></label>
+              <label class="toggle-row"><span><strong>始终置顶显示</strong><small>不被普通窗口遮住</small></span><input id="always-on-top" type="checkbox" /></label>
+              <div class="info-row"><span>角色尺寸</span><span class="info-value">100 × 150 px · 锁定</span></div>
             </section>
             <section class="pane" data-pane="recycle">
-              <div class="recycle-header"><span>已回收</span><button id="empty-recycle" class="btn-small" type="button">清空</button></div>
+              <div class="stat-grid"><div><b id="recycle-count">0</b><span>已收纳</span></div><div><b id="recycle-size">0 B</b><span>占用空间</span></div><div><b id="recycle-last">—</b><span>最近投喂</span></div></div>
+              <div class="recycle-header"><span>回收站内容</span><button id="empty-recycle" class="btn-small danger" type="button">清空回收站</button></div>
               <div id="recycle-list" class="recycle-list"></div>
-              <p id="recycle-empty-hint" class="hint">回收站是空的。拖拽文件或文件夹给蟑螂，它会先确认再收起来。</p>
+              <p id="recycle-empty-hint" class="hint">拖拽文件或文件夹到蟑螂身上。确认后会移动到应用回收站，可在这里恢复。</p>
             </section>
-            <section class="pane" data-pane="about">
-              <p class="about-name">Roach on Desk</p>
-              <p class="hint">拖动可抓住它；连点会挣扎。拖到屏幕边缘松手，它会藏起来只露触须。</p>
+            <section class="pane" data-pane="records">
+              <label class="toggle-row"><span><strong>本地活动记录</strong><small>仅写入此电脑，不联网；可随时关闭</small></span><input id="activity-log" type="checkbox" /></label>
+              <div class="record-header"><span>最近记录</span><button id="refresh-log" class="btn-small" type="button">刷新</button></div>
+              <ol id="activity-log-list" class="activity-log"></ol>
+              <p id="activity-log-empty" class="hint">开启记录后，这里会显示爬行、休息和投喂等状态。</p>
             </section>
+            <section class="pane" data-pane="about"><div class="about-card"><p class="eyebrow">ROACH ON DESK</p><h2>一只留在桌面上的小观察对象。</h2><p>固定 100 × 150 像素；不连接 Agent、不读取系统事件、不使用网络。它会短暂爬行、停下休息、清洁触须、整理翅鞘，在边缘躲藏。</p></div></section>
           </div>
         </div>
       </div>
-    </div>
+    </main>
     <script type="module" src="settings.js"></script>
   </body>
 </html>

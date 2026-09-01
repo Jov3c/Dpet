@@ -9,16 +9,23 @@ let settingsWindow;
 let confirmWindow;
 let tray;
 let isQuitting = false;
+let positionSaveTimer;
 const PET_SIZE = { width: 100, height: 150 };
-const SETTINGS_SIZE = { width: 380, height: 460 };
-const CONFIRM_SIZE = { width: 360, height: 230 };
+const SETTINGS_SIZE = { width: 460, height: 580 };
+const CONFIRM_SIZE = { width: 380, height: 260 };
 let recycleConfirmationPaths = [];
 const DEFAULT_SETTINGS = {
   autoWalk: true,
   draggable: true,
   tease: true,
   edgeTuck: true,
-  alwaysOnTop: true
+  alwaysOnTop: true,
+  activityLevel: "lazy",
+  quietMode: false,
+  rememberPosition: true,
+  edgePreference: "any",
+  activityLog: false,
+  lastPosition: null
 };
 
 function settingsPath() {
@@ -35,10 +42,19 @@ function readSettings() {
 
 function normalizeSettings(candidate = {}) {
   const input = candidate && typeof candidate === "object" ? candidate : {};
-  return Object.fromEntries(Object.entries(DEFAULT_SETTINGS).map(([key, fallback]) => [
-    key,
-    typeof input[key] === "boolean" ? input[key] : fallback
-  ]));
+  const booleans = ["autoWalk", "draggable", "tease", "edgeTuck", "alwaysOnTop", "quietMode", "rememberPosition", "activityLog"];
+  const activityLevel = ["lazy", "normal", "active"].includes(input.activityLevel) ? input.activityLevel : DEFAULT_SETTINGS.activityLevel;
+  const edgePreference = ["any", "left", "right", "top", "bottom"].includes(input.edgePreference) ? input.edgePreference : DEFAULT_SETTINGS.edgePreference;
+  const position = input.lastPosition;
+  const lastPosition = position && Number.isFinite(position.x) && Number.isFinite(position.y)
+    ? { x: Math.round(position.x), y: Math.round(position.y) }
+    : null;
+  return {
+    ...Object.fromEntries(booleans.map((key) => [key, typeof input[key] === "boolean" ? input[key] : DEFAULT_SETTINGS[key]])),
+    activityLevel,
+    edgePreference,
+    lastPosition
+  };
 }
 
 function saveSettings(settings) {
@@ -50,11 +66,46 @@ function currentWorkArea() {
   return screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).workArea;
 }
 
+function activityLogPath() {
+  return path.join(app.getPath("userData"), "activity.log");
+}
+
+function recordActivity(type) {
+  if (!readSettings().activityLog) return;
+  fs.appendFileSync(activityLogPath(), `${new Date().toISOString()}\t${type}\n`);
+}
+
+function readActivityLog() {
+  try {
+    return fs.readFileSync(activityLogPath(), "utf8").trim().split("\n").filter(Boolean).slice(-50).reverse().map((line) => {
+      const [at, ...parts] = line.split("\t");
+      return { at, type: parts.join("\t") || "状态变化" };
+    });
+  } catch {
+    return [];
+  }
+}
+
 function setPetWindowSize(size = PET_SIZE) {
   if (!petWindow) return;
   const { x, y } = petWindow.getBounds();
   petWindow.setBounds({ x, y, width: size.width, height: size.height }, false);
   petWindow.setResizable(false);
+}
+
+function restorePetPosition(settings) {
+  if (!petWindow || !settings.rememberPosition || !settings.lastPosition) return;
+  const area = currentWorkArea();
+  const x = Math.min(Math.max(settings.lastPosition.x, 0), area.width - PET_SIZE.width);
+  const y = Math.min(Math.max(settings.lastPosition.y, 0), area.height - PET_SIZE.height);
+  petWindow.setBounds({ x: area.x + x, y: area.y + y, width: PET_SIZE.width, height: PET_SIZE.height }, false);
+}
+
+function savePetPosition(position) {
+  const settings = readSettings();
+  if (!settings.rememberPosition) return;
+  clearTimeout(positionSaveTimer);
+  positionSaveTimer = setTimeout(() => saveSettings({ ...settings, lastPosition: { x: Math.round(position.x), y: Math.round(position.y) } }), 400);
 }
 
 function centerWindow(window) {
@@ -70,7 +121,15 @@ function centerWindow(window) {
 }
 
 function applyDisplayMode(settings) {
-  petWindow?.setAlwaysOnTop(Boolean(settings.alwaysOnTop), settings.alwaysOnTop ? "screen-saver" : undefined);
+  if (!petWindow) return;
+  if (settings.alwaysOnTop) {
+    petWindow.setAlwaysOnTop(true, "screen-saver");
+    return;
+  }
+  petWindow.setAlwaysOnTop(false);
+  // A normal-level pet should still remain above the Explorer desktop after the setting changes.
+  petWindow.showInactive();
+  petWindow.moveTop();
 }
 
 function openSettings() {
@@ -89,6 +148,7 @@ function openSettings() {
     resizable: false,
     useContentSize: true,
     skipTaskbar: true,
+    alwaysOnTop: true,
     show: false,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
@@ -96,6 +156,7 @@ function openSettings() {
       nodeIntegration: false
     }
   });
+  settingsWindow.setAlwaysOnTop(true, "floating");
   settingsWindow.loadFile(path.join(__dirname, "renderer", "settings.html"));
   settingsWindow.once("ready-to-show", () => {
     centerWindow(settingsWindow);
@@ -172,6 +233,7 @@ function createWindow() {
   });
   petWindow.setAlwaysOnTop(true, "screen-saver");
   setPetWindowSize();
+  restorePetPosition(readSettings());
   petWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   petWindow.on("minimize", () => petWindow?.restore());
   petWindow.loadFile(path.join(__dirname, "renderer", "index.html"));
@@ -194,6 +256,7 @@ ipcMain.handle("pet:set-settings", (_event, partial) => {
   const next = normalizeSettings({ ...readSettings(), ...partial });
   saveSettings(next);
   if (typeof partial.alwaysOnTop === "boolean") applyDisplayMode(next);
+  BrowserWindow.getAllWindows().forEach((window) => window.webContents.send("settings-changed", next));
   return next;
 });
 ipcMain.handle("pet:get-work-area", () => currentWorkArea());
@@ -206,6 +269,7 @@ ipcMain.on("pet:move", (_event, position) => {
   const width = isPeekSize ? requestedSize.width : PET_SIZE.width;
   const height = isPeekSize ? requestedSize.height : PET_SIZE.height;
   petWindow.setBounds({ x: Math.round(area.x + position.x), y: Math.round(area.y + position.y), width, height }, false);
+  if (width === PET_SIZE.width && height === PET_SIZE.height) savePetPosition(position);
 });
 ipcMain.on("pet:hide", () => petWindow?.hide());
 ipcMain.on("pet:show", () => petWindow?.showInactive());
@@ -220,18 +284,29 @@ ipcMain.handle("pet:get-recycle-confirmation", () => recycleConfirmationPaths.ma
 })));
 ipcMain.handle("pet:confirm-recycle", () => {
   const results = recycleBin.recycleFiles(recycleConfirmationPaths);
+  const successCount = results.filter((result) => result.ok).length;
+  if (successCount) {
+    recordActivity(`回收 ${successCount} 项`);
+    petWindow?.webContents.send("recycle-complete", successCount);
+  }
   return results;
 });
 ipcMain.on("pet:close-recycle-confirmation", () => confirmWindow?.close());
 ipcMain.handle("pet:list-recycle-bin", () => recycleBin.listItems());
+ipcMain.handle("pet:get-recycle-stats", () => recycleBin.getStats());
 ipcMain.handle("pet:restore-file", (_event, id) => recycleBin.restoreFile(id));
 ipcMain.handle("pet:empty-recycle-bin", () => recycleBin.emptyBin());
+ipcMain.on("pet:record-activity", (_event, type) => {
+  if (typeof type === "string" && type.length <= 64) recordActivity(type);
+});
+ipcMain.handle("pet:get-activity-log", () => readActivityLog());
 
 app.on("window-all-closed", (event) => {
   if (!isQuitting) event.preventDefault();
 });
 app.on("before-quit", () => {
   isQuitting = true;
+  clearTimeout(positionSaveTimer);
   tray?.destroy();
   settingsWindow?.destroy();
   confirmWindow?.destroy();

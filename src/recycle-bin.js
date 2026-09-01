@@ -61,6 +61,15 @@ function listItems() {
   return readManifest();
 }
 
+function getStats() {
+  const items = readManifest();
+  return {
+    count: items.length,
+    bytes: items.reduce((total, item) => total + (Number.isFinite(item.size) ? item.size : 0), 0),
+    lastRecycledAt: items.reduce((latest, item) => latest && latest > item.recycledAt ? latest : item.recycledAt, null)
+  };
+}
+
 function restoreFile(id) {
   const items = readManifest();
   const index = items.findIndex((item) => item.id === id);
@@ -93,4 +102,4 @@ function emptyBin() {
   return items.length;
 }
 
-module.exports = { init, recycleFiles, listItems, restoreFile, emptyBin };
+module.exports = { init, recycleFiles, listItems, getStats, restoreFile, emptyBin };

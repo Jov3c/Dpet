@@ -30,10 +30,10 @@ test("roaming direction ignores the cursor", () => {
   assert.ok(next.velocity.x < 0, "cursor on the right must not pull the pet toward it");
 });
 
-test("a resting pet stays still until the pointer wakes it", () => {
+test("an idle pet stays still until the pointer wakes it", () => {
   let state = { ...createPetState({ x: 500, y: 400, heading: 0 }), nextRestAt: 0 };
   state = advancePet(state, { viewport, deltaMs: 16, random: () => 0 });
-  assert.equal(state.mode, "sleep");
+  assert.equal(state.mode, "idle");
 
   state = applyPetEvent(state, { type: "wake" });
   assert.equal(state.mode, "walk");
@@ -82,4 +82,23 @@ test("a pet tucked into an edge stays still until the user reveals it", () => {
   });
   assert.equal(still.mode, "tucked");
   assert.deepEqual({ x: still.x, y: still.y }, { x: 30, y: 200 });
+});
+
+test("quiet mode settles into the idle state and wakes only on contact", () => {
+  let state = createPetState({ x: 300, y: 300, heading: 0, quietMode: true });
+  state = advancePet(state, { viewport, deltaMs: 40, random: () => 0.7 });
+  assert.equal(state.mode, "idle");
+  assert.equal(state.velocity.x, 0);
+
+  state = applyPetEvent(state, { type: "wake" });
+  assert.equal(state.mode, "walk");
+});
+
+test("edge emergence and file feeding use dedicated transient states", () => {
+  let state = createPetState({ x: 300, y: 300, heading: 0 });
+  state = applyPetEvent(state, { type: "emerge" });
+  assert.equal(state.mode, "emerge");
+  state = applyPetEvent(state, { type: "eat" });
+  assert.equal(state.mode, "eat");
+  assert.ok(state.transientUntil > Date.now());
 });

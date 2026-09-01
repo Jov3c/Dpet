@@ -2,11 +2,25 @@ export const PET_WIDTH = 100;
 export const PET_HEIGHT = 150;
 const EDGE_MARGIN = 8;
 const WALK_SPEED = 52;
-const TRANSIENT_DURATIONS = { grabbed: 520, dropped: 480, struggle: 850 };
+const TRANSIENT_DURATIONS = { grabbed: 520, dropped: 480, struggle: 850, emerge: 520, eat: 850, alert: 520 };
 const TURN_DURATION = 300;
-const REST_INTERVAL = { min: 3500, span: 3500 };
 
-export function createPetState({ x, y, heading = 0 }) {
+const ACTIVITY_PROFILES = {
+  lazy: { walkMin: 3500, walkSpan: 3500 },
+  normal: { walkMin: 8000, walkSpan: 5000 },
+  active: { walkMin: 14000, walkSpan: 8000 },
+};
+
+function activityProfile(level) {
+  return ACTIVITY_PROFILES[level] || ACTIVITY_PROFILES.lazy;
+}
+
+function nextRestTime(level, random = Math.random) {
+  const profile = activityProfile(level);
+  return Date.now() + profile.walkMin + random() * profile.walkSpan;
+}
+
+export function createPetState({ x, y, heading = 0, activityLevel = "lazy", quietMode = false }) {
   return {
     x,
     y,
@@ -14,7 +28,9 @@ export function createPetState({ x, y, heading = 0 }) {
     velocity: { x: Math.cos(heading) * WALK_SPEED, y: Math.sin(heading) * WALK_SPEED },
     mode: "walk",
     transientUntil: 0,
-    nextRestAt: Date.now() + REST_INTERVAL.min,
+    activityLevel,
+    quietMode,
+    nextRestAt: quietMode ? 0 : nextRestTime(activityLevel),
   };
 }
 
@@ -31,12 +47,21 @@ export function applyPetEvent(state, event) {
   if (event.type === "tease") {
     return { ...state, mode: "struggle", transientUntil: Date.now() + TRANSIENT_DURATIONS.struggle };
   }
-  if (event.type === "wake" && (state.mode === "sleep" || state.mode === "groom")) {
+  if (event.type === "alert") {
+    return { ...state, mode: "alert", velocity: { x: 0, y: 0 }, transientUntil: Date.now() + TRANSIENT_DURATIONS.alert };
+  }
+  if (event.type === "eat") {
+    return { ...state, mode: "eat", velocity: { x: 0, y: 0 }, transientUntil: Date.now() + TRANSIENT_DURATIONS.eat };
+  }
+  if (event.type === "emerge") {
+    return { ...state, mode: "emerge", transientUntil: Date.now() + TRANSIENT_DURATIONS.emerge };
+  }
+  if (event.type === "wake" && state.mode === "idle") {
     return {
       ...state,
       mode: "walk",
       velocity: { x: Math.cos(state.heading) * WALK_SPEED, y: Math.sin(state.heading) * WALK_SPEED },
-      nextRestAt: Date.now() + REST_INTERVAL.min,
+      nextRestAt: nextRestTime(state.activityLevel),
     };
   }
   if (event.type === "tuck") {
@@ -46,16 +71,16 @@ export function applyPetEvent(state, event) {
 }
 
 export function advancePet(state, { viewport, deltaMs, random = Math.random }) {
-  if (["grabbed", "dragged", "tucked", "sleep", "groom"].includes(state.mode)) return state;
+  if (["grabbed", "dragged", "tucked", "idle"].includes(state.mode)) return state;
 
   const now = Date.now();
   if (state.transientUntil > now) return state;
-  if (now >= state.nextRestAt) {
+  if (state.quietMode || now >= state.nextRestAt) {
     return {
       ...state,
-      mode: random() < 0.65 ? "sleep" : "groom",
+      mode: "idle",
       velocity: { x: 0, y: 0 },
-      nextRestAt: now + REST_INTERVAL.min + random() * REST_INTERVAL.span,
+      nextRestAt: nextRestTime(state.activityLevel, random),
     };
   }
   const heading = state.heading + (random() - 0.5) * 0.12;

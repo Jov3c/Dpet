@@ -15,6 +15,19 @@ contextBridge.exposeInMainWorld("petApi", {
   confirmRecycle: () => ipcRenderer.invoke("pet:confirm-recycle"),
   closeRecycleConfirmation: () => ipcRenderer.send("pet:close-recycle-confirmation"),
   listRecycleBin: () => ipcRenderer.invoke("pet:list-recycle-bin"),
+  getRecycleStats: () => ipcRenderer.invoke("pet:get-recycle-stats"),
   restoreFile: (id) => ipcRenderer.invoke("pet:restore-file", id),
-  emptyRecycleBin: () => ipcRenderer.invoke("pet:empty-recycle-bin")
+  emptyRecycleBin: () => ipcRenderer.invoke("pet:empty-recycle-bin"),
+  recordActivity: (type) => ipcRenderer.send("pet:record-activity", type),
+  getActivityLog: () => ipcRenderer.invoke("pet:get-activity-log"),
+  onRecycleComplete: (listener) => {
+    const handler = (_event, count) => listener(count);
+    ipcRenderer.on("recycle-complete", handler);
+    return () => ipcRenderer.removeListener("recycle-complete", handler);
+  },
+  onSettingsChanged: (listener) => {
+    const handler = (_event, settings) => listener(settings);
+    ipcRenderer.on("settings-changed", handler);
+    return () => ipcRenderer.removeListener("settings-changed", handler);
+  }
 });
