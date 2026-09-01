@@ -22,7 +22,9 @@
     "productName": "Roach on Desk",
     "files": [
       "src/**/*",
-      "assets/roach-topdown/**/*",
+      "assets/roach-topdown/animations/**/*",
+      "assets/roach-topdown/states/**/*",
+      "assets/roach-topdown/theme.json",
       "package.json",
       "README.md"
     ],
