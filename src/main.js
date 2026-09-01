@@ -6,6 +6,7 @@ const { buildTrayMenu } = require("./main-menu");
 const recycleBin = require("./recycle-bin");
 
 let petWindow;
+let settingsWindow;
 let tray;
 let cpuTimer;
 let lastCpuSample;
@@ -58,12 +59,12 @@ function setPetWindowSize(size) {
   petWindow.setResizable(false);
 }
 
-// Center the current window on the display under the cursor.
-function centerWindow() {
-  if (!petWindow) return;
+// Center a window on the display under the cursor.
+function centerWindow(win) {
+  if (!win) return;
   const area = currentWorkArea();
-  const bounds = petWindow.getBounds();
-  petWindow.setBounds({
+  const bounds = win.getBounds();
+  win.setBounds({
     x: Math.round(area.x + (area.width - bounds.width) / 2),
     y: Math.round(area.y + (area.height - bounds.height) / 2),
     width: bounds.width,
@@ -76,12 +77,37 @@ function applyDisplayMode(settings) {
   petWindow.setAlwaysOnTop(Boolean(settings.alwaysOnTop), settings.alwaysOnTop ? "screen-saver" : undefined);
 }
 
+// The settings live in their own window so the pet never moves or resizes when
+// settings are opened or closed.
 function openSettings() {
-  if (!petWindow) return;
-  setPetWindowSize(SETTINGS_SIZE);
-  centerWindow();
-  petWindow.showInactive();
-  petWindow.webContents.send("open-settings");
+  if (!settingsWindow || settingsWindow.isDestroyed()) {
+    settingsWindow = new BrowserWindow({
+      width: SETTINGS_SIZE.width,
+      height: SETTINGS_SIZE.height,
+      frame: false,
+      transparent: true,
+      hasShadow: false,
+      resizable: false,
+      useContentSize: true,
+      skipTaskbar: true,
+      show: false,
+      webPreferences: {
+        preload: path.join(__dirname, "preload.js"),
+        contextIsolation: true,
+        nodeIntegration: false,
+      },
+    });
+    settingsWindow.loadFile(path.join(__dirname, "renderer", "settings.html"));
+    settingsWindow.once("ready-to-show", () => {
+      centerWindow(settingsWindow);
+      settingsWindow.showInactive();
+      settingsWindow.focus();
+    });
+    return;
+  }
+  centerWindow(settingsWindow);
+  settingsWindow.showInactive();
+  settingsWindow.focus();
 }
 
 function createTray() {
@@ -185,10 +211,10 @@ ipcMain.on("pet:move", (_event, position) => {
 });
 ipcMain.on("pet:hide", () => petWindow?.hide());
 ipcMain.on("pet:show", () => petWindow?.showInactive());
-ipcMain.on("pet:set-settings-open", (_event, open) => setPetWindowSize(open ? SETTINGS_SIZE : PET_SIZE));
+ipcMain.on("pet:close-settings", () => settingsWindow?.close());
 ipcMain.on("pet:set-dialog-open", (_event, open) => {
   setPetWindowSize(open ? DIALOG_SIZE : PET_SIZE);
-  if (open) centerWindow();
+  if (open) centerWindow(petWindow);
 });
 
 // Recycle bin: the roach "eats" dropped files by moving them into its own bin.
@@ -207,5 +233,6 @@ app.on("before-quit", () => {
   isQuitting = true;
   clearInterval(cpuTimer);
   tray?.destroy();
+  settingsWindow?.destroy();
 });
 app.on("will-quit", () => globalShortcut.unregisterAll());

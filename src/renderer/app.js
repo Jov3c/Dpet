@@ -2,23 +2,11 @@ import { advancePet, applyPetEvent, createPetState, PET_WIDTH, PET_HEIGHT } from
 import { applyPetVisual } from "./pet-view.mjs";
 
 const pet = document.querySelector("#pet");
-const settingsPanel = document.querySelector("#settings");
-const settingsTitle = document.querySelector("#settings-title");
-const autoWalkInput = document.querySelector("#auto-walk");
-const draggableInput = document.querySelector("#draggable");
-const avoidMouseInput = document.querySelector("#avoid-mouse");
-const teaseInput = document.querySelector("#tease");
-const edgeTuckInput = document.querySelector("#edge-tuck");
-const systemEventsInput = document.querySelector("#system-events");
-const alwaysOnTopInput = document.querySelector("#always-on-top");
 const confirmDialog = document.querySelector("#confirm-dialog");
 const confirmCount = document.querySelector("#confirm-count");
 const confirmList = document.querySelector("#confirm-list");
 const confirmOk = document.querySelector("#confirm-ok");
 const confirmCancel = document.querySelector("#confirm-cancel");
-const recycleList = document.querySelector("#recycle-list");
-const recycleEmptyHint = document.querySelector("#recycle-empty-hint");
-const emptyRecycle = document.querySelector("#empty-recycle");
 
 const TUCK_MARGIN = 40;
 // Must match assets/roach-topdown/animations/peek-115x38.apng
@@ -30,7 +18,6 @@ let settings;
 let area;
 let state;
 let dragging = false;
-let settingsOpen = false;
 let dialogOpen = false;
 let lastFileDragOver = 0;
 let pendingPaths = [];
@@ -47,25 +34,6 @@ function render() {
 
 function syncPosition() {
   window.petApi.move({ x: state.x, y: state.y });
-}
-
-function setSettingsOpen(open) {
-  settingsOpen = open;
-  settingsPanel.hidden = !open;
-  pet.hidden = open;
-  window.petApi.setSettingsOpen(open);
-  if (!open && state?.mode === "tucked") placePeek();
-}
-
-async function persistSettings(partial) {
-  settings = await window.petApi.setSettings(partial);
-  autoWalkInput.checked = settings.autoWalk;
-  draggableInput.checked = settings.draggable;
-  avoidMouseInput.checked = settings.avoidMouse;
-  teaseInput.checked = settings.tease;
-  edgeTuckInput.checked = settings.edgeTuck;
-  systemEventsInput.checked = settings.systemEvents;
-  alwaysOnTopInput.checked = settings.alwaysOnTop;
 }
 
 function trigger(event) {
@@ -141,12 +109,6 @@ function edgeForTuck() {
   return null;
 }
 
-function formatDate(iso) {
-  const d = new Date(iso);
-  const pad = (n) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
 function showConfirmDialog(paths) {
   pendingPaths = paths;
   confirmCount.textContent = `${paths.length} 个文件 / 文件夹`;
@@ -189,38 +151,12 @@ async function confirmRecycle() {
   setTimeout(closeConfirmDialog, 1000);
 }
 
-async function renderRecycleList() {
-  const items = await window.petApi.listRecycleBin();
-  recycleEmptyHint.hidden = items.length > 0;
-  recycleList.innerHTML = "";
-  for (const item of items) {
-    const row = document.createElement("div");
-    row.className = "recycle-item";
-    const name = document.createElement("span");
-    name.className = "item-name";
-    name.textContent = item.name;
-    name.title = item.originalPath;
-    const meta = document.createElement("span");
-    meta.className = "item-meta";
-    meta.textContent = formatDate(item.recycledAt);
-    const restore = document.createElement("button");
-    restore.className = "btn-small";
-    restore.textContent = "恢复";
-    restore.addEventListener("click", async () => {
-      await window.petApi.restoreFile(item.id);
-      await renderRecycleList();
-    });
-    row.append(name, meta, restore);
-    recycleList.appendChild(row);
-  }
-}
-
 async function animationFrame(now) {
   try {
     const deltaMs = Math.min(80, now - lastFrame);
     lastFrame = now;
     const fileHovering = performance.now() - lastFileDragOver < 400;
-    if (!dragging && !settingsOpen && !dialogOpen && !fileHovering && state?.mode !== "tucked") {
+    if (!dragging && !dialogOpen && !fileHovering && state?.mode !== "tucked") {
       if (settings.autoWalk) {
         if (now - lastCursorRead > 80) {
           const screenPoint = await window.petApi.getCursor();
@@ -314,36 +250,8 @@ pet.addEventListener("drop", async (event) => {
   showConfirmDialog(paths);
 });
 
-document.querySelector("#close-settings").addEventListener("click", () => setSettingsOpen(false));
 confirmOk.addEventListener("click", confirmRecycle);
 confirmCancel.addEventListener("click", closeConfirmDialog);
-emptyRecycle.addEventListener("click", async () => {
-  await window.petApi.emptyRecycleBin();
-  await renderRecycleList();
-});
-
-// Left sidebar: switch which settings pane is shown in the center.
-for (const item of document.querySelectorAll(".sidebar-item")) {
-  item.addEventListener("click", () => {
-    for (const other of document.querySelectorAll(".sidebar-item")) {
-      other.classList.toggle("is-active", other === item);
-    }
-    for (const pane of document.querySelectorAll(".pane")) {
-      pane.classList.toggle("is-active", pane.dataset.pane === item.dataset.pane);
-    }
-    settingsTitle.textContent = item.textContent;
-    if (item.dataset.pane === "recycle") renderRecycleList();
-  });
-}
-
-autoWalkInput.addEventListener("change", () => persistSettings({ autoWalk: autoWalkInput.checked }));
-draggableInput.addEventListener("change", () => persistSettings({ draggable: draggableInput.checked }));
-avoidMouseInput.addEventListener("change", () => persistSettings({ avoidMouse: avoidMouseInput.checked }));
-teaseInput.addEventListener("change", () => persistSettings({ tease: teaseInput.checked }));
-edgeTuckInput.addEventListener("change", () => persistSettings({ edgeTuck: edgeTuckInput.checked }));
-systemEventsInput.addEventListener("change", () => persistSettings({ systemEvents: systemEventsInput.checked }));
-alwaysOnTopInput.addEventListener("change", () => persistSettings({ alwaysOnTop: alwaysOnTopInput.checked }));
-window.petApi.onOpenSettings(() => setSettingsOpen(true));
 
 window.petApi.onSystemEvent((event) => {
   if (!settings.systemEvents) return;
@@ -362,7 +270,6 @@ async function boot() {
     window.petApi.getWorkArea()
   ]);
   state = createPetState({ x: Math.round(area.width * 0.58), y: Math.round(area.height * 0.42), heading: Math.PI / 2 });
-  await persistSettings(settings);
   render();
   syncPosition();
   requestAnimationFrame(animationFrame);

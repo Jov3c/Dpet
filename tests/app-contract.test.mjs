@@ -7,9 +7,9 @@ test("desktop runtime is configured as an offline Electron application", () => {
   assert.equal(pkg.main, "src/main.js");
   assert.equal(pkg.scripts.start, "electron .");
   assert.equal(pkg.scripts.make, "node scripts/make-portable.mjs");
-  assert.equal(pkg.scripts.makeInstaller, "electron-builder --win nsis");
+  assert.equal(pkg.scripts.dist, "electron-builder --win");
   assert.ok(pkg.devDependencies.electron);
-  assert.equal(pkg.build.win.signAndEditExecutable, false);
+  assert.ok(pkg.build.win.icon, "win icon should be configured");
   assert.ok(existsSync("src/preload.js"));
   assert.ok(existsSync("src/renderer/index.html"));
   assert.ok(existsSync("scripts/make-portable.mjs"));

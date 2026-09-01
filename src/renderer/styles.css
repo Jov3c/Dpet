@@ -5,7 +5,7 @@ body { background: transparent; font-family: "Microsoft YaHei", "Noto Sans CJK S
 #pet-shell { position: relative; }
 #pet { width: 100%; height: 100%; object-fit: contain; cursor: grab; transform-origin: 50% 50%; filter: drop-shadow(0 1px 1px rgb(0 0 0 / 20%)); }
 #pet:active { cursor: grabbing; }
-#settings { min-height: 100%; color: #d8d8de; background: #121316; border: 1px solid #2a2b31; border-radius: 10px; box-shadow: 0 10px 40px rgb(0 0 0 / 55%); overflow: hidden; font-size: 13px; }
+.settings-window { width: 100%; height: 100%; box-sizing: border-box; color: #d8d8de; background: #121316; border: 1px solid #2a2b31; border-radius: 10px; box-shadow: 0 10px 40px rgb(0 0 0 / 55%); overflow: hidden; font-size: 13px; }
 .settings-layout { display: flex; min-height: 100%; }
 .settings-sidebar { display: flex; flex-direction: column; gap: 2px; width: 88px; padding: 12px 8px; flex-shrink: 0; background: #18191d; border-right: 1px solid rgb(255 255 255 / 7%); }
 .sidebar-brand { padding: 4px 10px 14px; font: 700 11px/1 Consolas, monospace; letter-spacing: .14em; color: #8a8a94; }
@@ -16,8 +16,8 @@ body { background: transparent; font-family: "Microsoft YaHei", "Noto Sans CJK S
 .settings-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 .settings-bar { display: flex; align-items: center; justify-content: space-between; padding: 13px 16px; border-bottom: 1px solid rgb(255 255 255 / 8%); background: rgb(255 255 255 / 3%); }
 .settings-title { font: 600 11px/1 Consolas, monospace; letter-spacing: .12em; color: #b9b9c2; }
-#settings .settings-bar button { appearance: none; border: 0; background: transparent; color: #8a8a94; font-size: 14px; line-height: 1; padding: 4px; border-radius: 6px; cursor: pointer; }
-#settings .settings-bar button:hover { color: #fff; background: rgb(255 255 255 / 8%); }
+.settings-window .settings-bar button { appearance: none; border: 0; background: transparent; color: #8a8a94; font-size: 14px; line-height: 1; padding: 4px; border-radius: 6px; cursor: pointer; }
+.settings-window .settings-bar button:hover { color: #fff; background: rgb(255 255 255 / 8%); }
 .settings-content { flex: 1; padding: 14px 16px; overflow-y: auto; }
 .pane { display: none; }
 .pane.is-active { display: block; }

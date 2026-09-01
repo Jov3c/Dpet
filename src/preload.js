@@ -9,7 +9,7 @@ contextBridge.exposeInMainWorld("petApi", {
   move: (position) => ipcRenderer.send("pet:move", position),
   hide: () => ipcRenderer.send("pet:hide"),
   show: () => ipcRenderer.send("pet:show"),
-  setSettingsOpen: (open) => ipcRenderer.send("pet:set-settings-open", open),
+  closeSettings: () => ipcRenderer.send("pet:close-settings"),
   setDialogOpen: (open) => ipcRenderer.send("pet:set-dialog-open", open),
   getPathForFile: (file) => webUtils.getPathForFile(file),
   recycleFiles: (paths) => ipcRenderer.invoke("pet:recycle-files", paths),
@@ -20,9 +20,5 @@ contextBridge.exposeInMainWorld("petApi", {
     const handler = (_event, type) => listener(type);
     ipcRenderer.on("system-event", handler);
     return () => ipcRenderer.removeListener("system-event", handler);
-  },
-  onOpenSettings: (listener) => {
-    ipcRenderer.on("open-settings", listener);
-    return () => ipcRenderer.removeListener("open-settings", listener);
   }
 });
