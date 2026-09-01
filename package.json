@@ -1,0 +1,44 @@
+{
+  "name": "roach-on-desk",
+  "version": "0.1.0",
+  "description": "Offline, photorealistic cockroach desktop pet for Windows 11",
+  "main": "src/main.js",
+  "author": "Dpet",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test",
+    "lint": "node scripts/check-app.mjs",
+    "make": "node scripts/make-portable.mjs",
+    "dist": "electron-builder --win"
+  },
+  "devDependencies": {
+    "electron": "^44.0.0",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "com.dpet.roachondesk",
+    "productName": "Roach on Desk",
+    "files": [
+      "src/**/*",
+      "assets/roach-topdown/**/*",
+      "package.json",
+      "README.md"
+    ],
+    "win": {
+      "target": ["portable", "nsis"],
+      "icon": "build/icon.ico"
+    },
+    "portable": {
+      "artifactName": "Roach-on-Desk-${version}-portable.${ext}"
+    },
+    "nsis": {
+      "artifactName": "Roach-on-Desk-${version}-Setup.${ext}",
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  }
+}

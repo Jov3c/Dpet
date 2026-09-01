@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Peridomestic Roach · SVG Theme Preview</title>
+  <style>
+    :root{--ink:#e8dec5;--muted:#a29578;--paper:#17130f;--panel:#241a12;--line:#63513a;--amber:#dd913f;--rust:#9b4823}
+    *{box-sizing:border-box} body{margin:0;min-width:320px;background:#100d0a;color:var(--ink);font-family:Georgia,"Times New Roman",serif}
+    body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.18;background-image:radial-gradient(#d9c28c 0.5px,transparent .7px);background-size:5px 5px;mix-blend-mode:overlay}
+    header{position:relative;overflow:hidden;padding:54px max(7vw,24px) 36px;border-bottom:1px solid var(--line);background:linear-gradient(105deg,#24150d 0%,#120e0a 60%,#31180e 100%)}
+    header::after{content:"";position:absolute;width:520px;height:520px;border:1px solid #a65d2d66;border-radius:50%;right:-180px;top:-310px;box-shadow:0 0 0 42px #a65d2d12,0 0 0 83px #a65d2d0b}
+    .eyebrow{position:relative;z-index:1;font:600 11px/1.2 Consolas,monospace;letter-spacing:.2em;text-transform:uppercase;color:var(--amber)} h1{position:relative;z-index:1;max-width:850px;margin:10px 0 8px;font-size:clamp(37px,6vw,78px);line-height:.94;letter-spacing:-.045em;font-weight:500} .sub{position:relative;z-index:1;max-width:660px;margin:0;color:#c8b99a;font-size:16px;line-height:1.55}
+    main{position:relative;max-width:1500px;margin:auto;padding:34px max(5vw,18px) 80px}.legend{display:flex;flex-wrap:wrap;gap:9px;margin:0 0 38px}.chip{border:1px solid #68523a;border-radius:100px;padding:6px 10px;color:#d2c29e;background:#251a11;font:11px Consolas,monospace}.chip i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;background:var(--amber)}
+    section{margin-top:46px} h2{margin:0 0 17px;font-size:24px;font-weight:500;letter-spacing:-.02em}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}.card{min-width:0;border:1px solid #4f402e;background:linear-gradient(145deg,#21170f,#16110d);box-shadow:10px 10px 0 #09070655;transition:transform .18s ease,border-color .18s ease}.card:hover{transform:translate(-3px,-3px);border-color:#bd7840}.canvas{position:relative;aspect-ratio:1;overflow:hidden;background-color:#aaa;background-image:linear-gradient(45deg,#777 25%,transparent 25%),linear-gradient(-45deg,#777 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#777 75%),linear-gradient(-45deg,transparent 75%,#777 75%);background-size:24px 24px;background-position:0 0,0 12px,12px -12px,-12px 0}.canvas::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 52%,#00000042);pointer-events:none}.canvas object{display:block;width:100%;height:100%;position:relative;z-index:1}.meta{padding:12px 14px 14px;border-top:1px solid #4f402e}.file{font:600 12px/1.2 Consolas,monospace;color:#f0c47c}.desc{margin-top:5px;color:var(--muted);font-size:13px;line-height:1.35}.note{margin:50px 0 0;padding:18px 20px;border-left:3px solid var(--rust);background:#1b130d;color:#bbaa89;font-size:14px;line-height:1.5}.note b{color:var(--ink)}
+    @media (max-width:560px){header{padding-top:40px}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.meta{padding:9px}.desc{display:none}.file{font-size:10px}}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="eyebrow">Original SVG desktop-pet theme · Windows 11</div>
+    <h1>PERIDOMESTIC<br>ROACH / PX</h1>
+    <p class="sub">高细节像素风蟑螂桌宠素材库。视觉采用参考图中的红褐翅鞘、细长触角与带棘六足；动作遵循真实昆虫行为。</p>
+  </header>
+  <main>
+    <div class="legend"><span class="chip"><i></i>透明画布</span><span class="chip"><i></i>像素级 SVG</span><span class="chip"><i></i>真实昆虫行为</span><span class="chip"><i></i>可拖拽命中区</span></div>
+    <section><h2>基础状态</h2><div class="grid">
+      <article class="card"><div class="canvas"><object data="states/idle.svg" type="image/svg+xml"></object></div><div class="meta"><div class="file">idle.svg</div><div class="desc">低幅呼吸与缓慢触角探测</div></div></article>
+      <article class="card"><div class="canvas"><object data="states/probe.svg" type="image/svg+xml"></object></div><div class="meta"><div class="file">probe.svg</div><div class="desc">停驻扫描环境</div></div></article>
+      <article class="card"><div class="canvas"><object data="states/walk.svg" type="image/svg+xml"></object></div><div class="meta"><div class="file">walk.svg</div><div class="desc">六足交替缓行</div></div></article>
+      <article class="card"><div class="canvas"><object data="states/sprint.svg" type="image/svg+xml"></object></div><div class="meta"><div class="file">sprint.svg</div><div class="desc">高频急速爬行</div></div></article>
+      <article class="card"><div class="canvas"><object data="states/flee.svg" type="image/svg+xml"></object></div><div class="meta"><div class="file">flee.svg</div><div class="desc">鼠标接近后的低伏逃窜</div></div></article>
+      <article class="card"><div class="canvas"><object data="states/sleeping.svg" type="image/svg+xml"></object></div><div class="meta"><div class="file">sleeping.svg</div><div class="desc">夜间或锁屏休眠</div></div></article>
+      <article class="card"><div class="canvas"><object data="states/waking.svg" type="image/svg+xml"></object></div><div class="meta"><div class="file">waking.svg</div><div class="desc">触角优先苏醒</div></div></article>
+    </div></section>
+    <section><h2>屏幕边缘</h2><div class="grid">
+      <article class="card"><div class="canvas"><object data="states/edge-peek.svg" type="image/svg+xml"></object></div><div class="meta"><div class="file">edge-peek.svg</div><div class="desc">从边缘谨慎探出</div></div></article>
+      <article class="card"><div class="canvas"><object data="states/edge-hide.svg" type="image/svg+xml"></object></div><div class="meta"><div class="file">edge-hide.svg</div><div class="desc">迅速钻回屏幕边缘</div></div></article>
+    </div></section>
+    <section><h2>鼠标交互反应</h2><div class="grid">
+      <article class="card"><div class="canvas"><object data="reactions/grabbed.svg" type="image/svg+xml"></object></div><div class="meta"><div class="file">grabbed.svg</div><div class="desc">抓起时六足悬空扑动</div></div></article>
+      <article class="card"><div class="canvas"><object data="reactions/dragged.svg" type="image/svg+xml"></object></div><div class="meta"><div class="file">dragged.svg</div><div class="desc">拖动时的惯性反应</div></div></article>
+      <article class="card"><div class="canvas"><object data="reactions/dropped.svg" type="image/svg+xml"></object></div><div class="meta"><div class="file">dropped.svg</div><div class="desc">落地翻正</div></div></article>
+      <article class="card"><div class="canvas"><object data="reactions/struggle.svg" type="image/svg+xml"></object></div><div class="meta"><div class="file">struggle.svg</div><div class="desc">连续挑逗后的剧烈挣扎</div></div></article>
+      <article class="card"><div class="canvas"><object data="reactions/alert.svg" type="image/svg+xml"></object></div><div class="meta"><div class="file">alert.svg</div><div class="desc">通知或受扰后的警觉定格</div></div></article>
+    </div></section>
+    <p class="note"><b>提示：</b>方格只用于预览透明区域；运行时不渲染。点击捕获范围由每个 SVG 的 <code>hitbox-js</code> 限制在头胸背板与腹部。</p>
+  </main>
+</body>
+</html>

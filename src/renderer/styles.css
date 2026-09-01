@@ -1,0 +1,59 @@
+:root { color-scheme: dark; }
+* { box-sizing: border-box; }
+html, body, #pet-shell { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+body { background: transparent; font-family: "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; user-select: none; }
+#pet-shell { position: relative; }
+#pet { width: 100%; height: 100%; object-fit: contain; cursor: grab; transform-origin: 50% 50%; filter: drop-shadow(0 1px 1px rgb(0 0 0 / 20%)); }
+#pet:active { cursor: grabbing; }
+#settings { min-height: 100%; color: #d8d8de; background: #121316; border: 1px solid #2a2b31; border-radius: 10px; box-shadow: 0 10px 40px rgb(0 0 0 / 55%); overflow: hidden; font-size: 13px; }
+.settings-layout { display: flex; min-height: 100%; }
+.settings-sidebar { display: flex; flex-direction: column; gap: 2px; width: 88px; padding: 12px 8px; flex-shrink: 0; background: #18191d; border-right: 1px solid rgb(255 255 255 / 7%); }
+.sidebar-brand { padding: 4px 10px 14px; font: 700 11px/1 Consolas, monospace; letter-spacing: .14em; color: #8a8a94; }
+.sidebar-item { appearance: none; border: 0; background: transparent; color: #9a9aa4; text-align: left; padding: 8px 10px; border-radius: 7px; font-size: 13px; cursor: pointer; }
+.sidebar-item:hover { background: rgb(255 255 255 / 5%); color: #e4e4ea; }
+.sidebar-item.is-active { background: rgb(76 141 255 / 16%); color: #7fb0ff; font-weight: 600; }
+.sidebar-footer { margin-top: auto; padding: 10px 10px 4px; font: 600 10px/1 Consolas, monospace; color: #5f5f6a; }
+.settings-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.settings-bar { display: flex; align-items: center; justify-content: space-between; padding: 13px 16px; border-bottom: 1px solid rgb(255 255 255 / 8%); background: rgb(255 255 255 / 3%); }
+.settings-title { font: 600 11px/1 Consolas, monospace; letter-spacing: .12em; color: #b9b9c2; }
+#settings .settings-bar button { appearance: none; border: 0; background: transparent; color: #8a8a94; font-size: 14px; line-height: 1; padding: 4px; border-radius: 6px; cursor: pointer; }
+#settings .settings-bar button:hover { color: #fff; background: rgb(255 255 255 / 8%); }
+.settings-content { flex: 1; padding: 14px 16px; overflow-y: auto; }
+.pane { display: none; }
+.pane.is-active { display: block; }
+.toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 11px; margin: 6px 0; background: rgb(255 255 255 / 4%); border: 1px solid rgb(255 255 255 / 6%); border-radius: 8px; cursor: pointer; }
+.toggle-row:hover { background: rgb(255 255 255 / 6%); }
+.toggle-row input { width: 15px; height: 15px; accent-color: #4c8dff; cursor: pointer; }
+.info-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 11px; margin: 6px 0; background: rgb(255 255 255 / 4%); border: 1px solid rgb(255 255 255 / 6%); border-radius: 8px; color: #b9b9c2; }
+.info-value { color: #e4e4ea; font: 600 12px Consolas, monospace; }
+.about-name { margin: 6px 2px 4px; font: 700 15px/1.3 "Microsoft YaHei", sans-serif; color: #e4e4ea; }
+.about-desc { margin: 0 2px 14px; color: #8a8a94; font-size: 12px; }
+.hint { margin: 10px 2px 0; color: #8a8a94; font-size: 11px; line-height: 1.8; }
+
+/* Recycle bin pane */
+.recycle-header { display: flex; align-items: center; justify-content: space-between; margin: 4px 2px 10px; }
+.section-label { margin: 0; font: 600 10px/1 Consolas, monospace; letter-spacing: .14em; text-transform: uppercase; color: #6f6f7a; }
+.btn-small { appearance: none; border: 1px solid rgb(255 255 255 / 10%); background: rgb(255 255 255 / 5%); color: #b9b9c2; padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; }
+.btn-small:hover { background: rgb(255 255 255 / 9%); }
+.recycle-list { display: flex; flex-direction: column; gap: 6px; }
+.recycle-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: rgb(255 255 255 / 4%); border: 1px solid rgb(255 255 255 / 6%); border-radius: 8px; }
+.recycle-item .item-name { flex: 1; min-width: 0; font-size: 12px; color: #e4e4ea; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.recycle-item .item-meta { font: 600 10px/1 Consolas, monospace; color: #6f6f7a; flex-shrink: 0; }
+
+/* Confirm dialog shown when a file is dropped on the pet */
+#confirm-dialog { display: none; min-height: 100%; align-items: center; justify-content: center; padding: 14px; }
+#confirm-dialog.is-active { display: flex; }
+.dialog-card { width: 100%; color: #d8d8de; background: #191a1e; border: 1px solid #2a2b31; border-radius: 10px; padding: 16px; }
+.dialog-card h2 { margin: 0 0 8px; font-size: 14px; color: #e4e4ea; }
+.dialog-count { margin: 0 0 10px; color: #8a8a94; font-size: 12px; }
+.dialog-list { margin: 0 0 14px; padding: 0; list-style: none; max-height: 90px; overflow-y: auto; }
+.dialog-list li { padding: 4px 6px; font-size: 12px; color: #b9b9c2; background: rgb(255 255 255 / 4%); border: 1px solid rgb(255 255 255 / 6%); border-radius: 6px; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dialog-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.dialog-actions button { appearance: none; border: 0; padding: 7px 14px; border-radius: 7px; font-size: 13px; cursor: pointer; }
+#confirm-cancel { background: rgb(255 255 255 / 8%); color: #d8d8de; }
+#confirm-cancel:hover { background: rgb(255 255 255 / 12%); }
+#confirm-ok { background: #4c8dff; color: #fff; font-weight: 600; }
+#confirm-ok:hover { background: #6ba1ff; }
+
+/* Hungry highlight while dragging a file over the pet */
+#pet.is-hungry { filter: drop-shadow(0 0 10px rgb(76 141 255 / 80%)); }

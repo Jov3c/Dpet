@@ -1,0 +1,36 @@
+{
+  "id": "photoreal-roach-topdown",
+  "name": "写实俯视蟑螂",
+  "canvas": { "width": 100, "height": 150, "transparent": true },
+  "states": {
+    "idle": "animations/idle-100x150.apng",
+    "alert": "animations/alert-100x150.apng",
+    "walk": "animations/walk-100x150.apng",
+    "sprint": "animations/sprint-100x150.apng",
+    "flee": "animations/flee-100x150.apng"
+  },
+  "reactions": {
+    "grabbed": "animations/grabbed-100x150.apng",
+    "dragged": "animations/dragged-100x150.apng",
+    "dropped": "animations/dropped-100x150.apng",
+    "struggle": "animations/struggle-100x150.apng"
+  },
+  "peek": "animations/peek-115x38.apng",
+  "eventMap": {
+    "mouseApproach": "flee",
+    "mouseHover": "alert",
+    "cpuBusy": "alert",
+    "notification": "alert",
+    "windowBlur": "sprint"
+  },
+  "interactionMap": {
+    "pointerDownOnBody": "grabbed",
+    "pointerDrag": "dragged",
+    "pointerUp": "dropped",
+    "repeatedTease": "struggle"
+  },
+  "runtimeNotes": {
+    "movement": "The desktop runtime translates and rotates the 100x150 sprite; APNG frames animate only legs and antennae.",
+    "flee": "Choose a direction away from the pointer, increase speed, then hide beyond the nearest screen edge."
+  }
+}

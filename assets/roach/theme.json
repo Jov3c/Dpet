@@ -1,0 +1,56 @@
+{
+  "id": "realistic-roach",
+  "name": "Peridomestic Roach · Pixel",
+  "version": 1,
+  "description": "A high-detail pixel cockroach theme with biologically grounded behavior for a Windows desktop pet.",
+  "master": "roach-master.svg",
+  "viewBox": "0 0 512 512",
+  "layout": {
+    "contentBox": { "x": 34, "y": 24, "width": 444, "height": 454 },
+    "baselineY": 402,
+    "bodyCenter": { "x": 256, "y": 257 },
+    "grabAnchor": { "x": 256, "y": 222 },
+    "edgeAnchors": {
+      "left": { "x": 0, "y": 256 },
+      "right": { "x": 512, "y": 256 },
+      "top": { "x": 256, "y": 0 },
+      "bottom": { "x": 256, "y": 512 }
+    }
+  },
+  "hitBox": { "x": 181, "y": 104, "width": 151, "height": 291, "shape": "ellipse" },
+  "capabilities": {
+    "antennaTracking": true,
+    "horizontalMirror": true,
+    "edgeMode": true,
+    "dragReaction": true
+  },
+  "states": {
+    "idle": "states/idle.svg",
+    "probe": "states/probe.svg",
+    "walk": "states/walk.svg",
+    "sprint": "states/sprint.svg",
+    "flee": "states/flee.svg",
+    "sleeping": "states/sleeping.svg",
+    "waking": "states/waking.svg",
+    "edge-peek": "states/edge-peek.svg",
+    "edge-hide": "states/edge-hide.svg"
+  },
+  "reactions": {
+    "grabbed": "reactions/grabbed.svg",
+    "dragged": "reactions/dragged.svg",
+    "dropped": "reactions/dropped.svg",
+    "struggle": "reactions/struggle.svg",
+    "alert": "reactions/alert.svg"
+  },
+  "minimumDisplayMs": {
+    "idle": 8000,
+    "probe": 5000,
+    "walk": 3000,
+    "sprint": 1200,
+    "flee": 1200,
+    "sleeping": 15000,
+    "waking": 2200,
+    "edge-peek": 2500,
+    "edge-hide": 900
+  }
+}

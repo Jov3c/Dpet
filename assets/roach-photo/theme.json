@@ -1,0 +1,35 @@
+{
+  "id": "photo-real-roach",
+  "name": "Peridomestic Roach · Photo Real",
+  "format": "png",
+  "description": "Photo-real transparent cockroach assets with biologically grounded desktop-pet behavior.",
+  "states": {
+    "idle": "states/idle.png",
+    "probe": "states/probe.png",
+    "walk": "states/walk.png",
+    "sprint": "states/sprint.png",
+    "flee": "states/flee.png",
+    "sleeping": "states/sleeping.png",
+    "waking": "states/waking.png",
+    "edge-peek": "states/edge-peek.png",
+    "edge-hide": "states/edge-hide.png"
+  },
+  "reactions": {
+    "grabbed": "reactions/grabbed.png",
+    "dragged": "reactions/dragged.png",
+    "dropped": "reactions/dropped.png",
+    "struggle": "reactions/struggle.png",
+    "alert": "reactions/alert.png"
+  },
+  "behavior": {
+    "mouse-near": "flee",
+    "mouse-grab": "grabbed",
+    "mouse-drag": "dragged",
+    "mouse-release": "dropped",
+    "sustained-teasing": "struggle",
+    "system-idle": "idle",
+    "night-or-lock": "sleeping",
+    "wake": "waking",
+    "notification": "alert"
+  }
+}
